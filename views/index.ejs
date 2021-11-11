@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+
+    <link rel="stylesheet" href="./css/bootstrap.min.css" />
+    <link rel="stylesheet" href="./css/index.css" />
+  </head>
+  <body>
+    <div class="container">
+      <div id="chat_window">
+        <ul id="messages"></ul>
+      </div>
+      <div class="chat_form">
+        <form class="form">
+          <input type="text" id="m" />
+          <button type="submit" id="submitButton">send</button>
+        </form>
+      </div>
+    </div>
+  </body>
+  <script src="./js/bootstrap.min.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    let userName = prompt("whats your name");
+    let room = prompt("room name");
+    let ID = "";
+    var socket = io();
+    //send data to server
+    socket.emit("join room", { userName, room });
+
+    //recieve data from server
+    socket.on("send data", (data) => {
+      ID = data.id;
+    });
+
+    document.getElementById("m").focus();
+    //when form is submitted, capture the input value and then send it to server
+    document
+      .getElementsByTagName("form")[0]
+      .addEventListener("submit", function (event) {
+        event.preventDefault();
+        socket.emit("chat message", {
+          value: document.getElementById("m").value,
+          user: userName,
+          room: room,
+        });
+        document.getElementById("m").value = "";
+      });
+    socket.on("chat room", (data) => {
+      console.log(data.data.user + ": " + data.id);
+      displayMessage(data);
+    });
+
+    // diosplay messages
+    function displayMessage(response) {
+      var message = response.data.value;
+      var user = response.data.user;
+      var chatWindow = document.getElementById("chat_window");
+      var messages = document.getElementsByClassName("scroll");
+      var ul = document.getElementById("messages");
+      var li = document.createElement("li");
+      var span = document.createElement("span");
+      var dateSpan = document.createElement("p");
+      const d = new Date();
+      //verify that the user ID and the message sent ID is similar
+      if (response.id === ID) {
+        li.className = "me";
+        span.className = "name";
+        span.appendChild(document.createTextNode("you"));
+        span.appendChild(document.createTextNode(" :  "));
+
+        li.appendChild(span);
+        li.appendChild(document.createTextNode(message));
+        ul.appendChild(li);
+        chatWindow.scrollTop = chatWindow.scrollHeight;
+      } else {
+        li.className = "him";
+        span.className = "name";
+        span.appendChild(document.createTextNode(user));
+        span.appendChild(document.createTextNode(" :  "));
+        li.appendChild(span);
+        li.appendChild(document.createTextNode(message));
+        ul.appendChild(li);
+        chatWindow.scrollTop = chatWindow.scrollHeight;
+      }
+    }
+  </script>
+</html>
